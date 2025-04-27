@@ -1,0 +1,1 @@
+web: uvicorn reddit_scraper:app --host 0.0.0.0 --port $PORT 
