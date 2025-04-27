@@ -47,15 +47,24 @@ openrouter_client = None
 def initialize_praw_sync(client_id, client_secret, user_agent):
     global reddit_instance
     if reddit_instance is None:
+        # Loggear si las variables están presentes o no
+        logging.info(f"Leyendo REDDIT_CLIENT_ID: {'Presente' if client_id else 'AUSENTE'}")
+        logging.info(f"Leyendo REDDIT_CLIENT_SECRET: {'Presente' if client_secret else 'AUSENTE'}")
+        
         if not client_id or not client_secret:
-            logging.error("Secrets de Reddit no encontrados.")
+            logging.error("Secrets de Reddit no encontrados en las variables de entorno.")
             return None
         try:
             logging.info("Inicializando conexión PRAW...")
             reddit_instance = praw.Reddit(
                 client_id=client_id, client_secret=client_secret, user_agent=user_agent
             )
-            logging.info(f"Conectado a Reddit como: {reddit_instance.user.me()}")
+            # Test connection by fetching user info
+            user_info = reddit_instance.user.me()
+            logging.info(f"Conectado a Reddit como: {user_info}")
+        except prawcore.exceptions.OAuthException as auth_error:
+            logging.error(f"Error de AUTENTICACIÓN con Reddit (OAuth): {auth_error}. ¿Credenciales correctas en variables?")
+            reddit_instance = None
         except Exception as e:
             logging.error(f"Error inicializando PRAW: {e}")
             reddit_instance = None
@@ -64,14 +73,22 @@ def initialize_praw_sync(client_id, client_secret, user_agent):
 def initialize_openrouter_client_sync(api_key):
     global openrouter_client
     if openrouter_client is None:
+        logging.info(f"Leyendo OPENROUTER_API_KEY: {'Presente' if api_key else 'AUSENTE'}")
         if not api_key:
-            logging.error("OPENROUTER_API_KEY no encontrada.")
+            logging.error("OPENROUTER_API_KEY no encontrada en las variables de entorno.")
             return None
         try:
             logging.info("Inicializando cliente OpenRouter...")
             openrouter_client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
-            # Podríamos añadir una llamada de prueba aquí si quisiéramos
-            logging.info("Cliente OpenRouter inicializado.")
+            # Realizar una llamada simple para verificar la clave (opcional, puede costar tokens mínimos)
+            # try:
+            #     openrouter_client.models.list()
+            #     logging.info("Llamada de prueba a OpenRouter exitosa.")
+            # except Exception as test_call_error:
+            #     logging.error(f"Error en llamada de prueba a OpenRouter: {test_call_error}. ¿Clave API válida?")
+            #     openrouter_client = None # Marcar como fallido si la prueba falla
+            #     return None
+            logging.info("Cliente OpenRouter inicializado (sin llamada de prueba). ")
         except Exception as e:
             logging.error(f"Error inicializando cliente OpenRouter: {e}")
             openrouter_client = None
